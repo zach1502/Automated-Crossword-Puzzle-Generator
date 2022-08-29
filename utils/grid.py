@@ -1,6 +1,8 @@
 import random
 
 class grid:
+    """ class for size * size crossword puzzle grid"""
+
     def __init__(self, size):
         self.size = size
         self.total_squares = size * size
@@ -41,12 +43,14 @@ class grid:
         }
 
     def print_debug(self):
+        """Print out debug info"""
         print(self.free_letter_locations)
         print(f"Word List: {self.used_words}")
         print(f"Word Starting Locations: {self.word_start_locations}")
         self.print_grid()
 
     def print_grid(self):
+        """Print out the grid contents"""
         for i in range(self.size):
             for j in range(self.size):
                 print("╋───", end="")
@@ -60,6 +64,7 @@ class grid:
         print("╋", end="\n")
     
     def add_word(self, word):
+        """Insert a word, it will do a best effort"""
         can_fit = False
         intersections = {} # index of the common letter(s) which allows for the intersection
          
@@ -123,8 +128,6 @@ class grid:
             if(h_placement_info != False and h_placement_info != None):
                 placement_info = h_placement_info
 
-
-    
         # remove squares around the intersection point from the free_letter_locations
         if(placement_info != None):
             self.remove_free_letters(placement_info)
@@ -134,6 +137,7 @@ class grid:
         return False
 
     def remove_free_letters(self, placement_info):
+        """ remove letters from the free_letters_list, prevents awkward placements """
         # remove letters if they are around the intersection point
         intersection_square = placement_info[list(placement_info.keys())[0]]
         squares_to_check = self.list_squares_to_remove(intersection_square)
@@ -149,6 +153,7 @@ class grid:
             new_letter_positions = []
         
     def list_squares_to_remove(self, intersection_square):
+        """ Gather squares to remove for remove_free_letters """
         arr = []
         for x in range(intersection_square[0] - 1, intersection_square[0] + 2):
             for y in range(intersection_square[1] - 1, intersection_square[1] + 2):
@@ -160,7 +165,8 @@ class grid:
         return arr
 
     def add_first_word(self, word):
-        # add the first word to the grid
+        """ Edgecase, adding the first word can be done quickly"""
+        # add the first word to the grid into a random corner
         result = random.randint(0, 2)
         if (result == 0):
             for i in range(len(word)):
@@ -182,6 +188,7 @@ class grid:
             self.word_start_locations[word] = ["h", self.size - 1, 0]
 
     def add_horizontal(self, word, intersections):
+        """ Add the word horizontally """
         word_placement_info = self.horizontal_checks(word, intersections)
         
         # returns a key-value pair or False
@@ -202,6 +209,7 @@ class grid:
         return False        
 
     def add_vertical(self, word, intersections):
+        """ Add the word vertically """
         word_placement_info = self.vertical_checks(word, intersections)
 
         # returns a key-value pair or False
@@ -222,7 +230,7 @@ class grid:
         return False   
 
     def horizontal_checks(self, word, intersections):
-        # check if the word can fit in at least one spot
+        """ Check if the word can fit in at least one spot horizontally """
         # intersection = #{word_index: [[intersection point]]}
         # {0: [[0, 2], [0, 3]], 1: [[0, 4]], 3: [[0, 1]]}
 
@@ -300,6 +308,7 @@ class grid:
         return False
 
     def vertical_checks(self, word, intersections):
+        """ Check if the word can fit in at least one spot vertically """
         for word_index in intersections:
             intersecting_points = intersections[word_index]
             can_fit = True
@@ -357,8 +366,6 @@ class grid:
                             can_fit = False
                             break
 
-                    
-                
                 if(can_fit == False):
                     continue
 
