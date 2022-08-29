@@ -1,4 +1,5 @@
 
+import string
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import numpy as np
@@ -12,7 +13,7 @@ DICTIONARY_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/"
 
 failed_words = []
 
-def get_words(num_words):
+def get_words(num_words: int):
     """ Get Random words by scalping randomlists.com """
     num_category = {
         "num_adj": [0, "https://www.randomlists.com/random-adjectives?dup=false&qty="],
@@ -45,7 +46,7 @@ def get_words(num_words):
 
     return WORDS
 
-def fetch_words(url):
+def fetch_words(url: string):
     """Init BROWSER if not already active"""
     global BROWSER
 
@@ -72,7 +73,7 @@ def fetch_words(url):
 
     print(WORDS)
 
-def fetch_definitions(v_words, h_words):
+def fetch_definitions(v_words: list, h_words: list):
     """ Take in words and find their definitions"""
     v_def = []
     h_def = []
@@ -82,7 +83,7 @@ def fetch_definitions(v_words, h_words):
 
     return v_def, h_def
 
-def process_response(words):
+def process_response(words: list):
     """ process the words and get their definitions """
     word_def = []
 
@@ -117,7 +118,7 @@ def process_response(words):
         word_def.append([word, chosen_def])
     return word_def
 
-def process_results(word_info, word):
+def process_results(word_info: dict, word: string):
     """ parse data related to a word, output a definition """
     possible_definitions = []
     for definition_details in word_info[0]["meanings"][0]["definitions"]:
@@ -134,7 +135,7 @@ def process_results(word_info, word):
     chosen_def = possible_definitions[np.random.randint(0, len(possible_definitions))]
     return chosen_def
 
-def scalp_from_merriam(word):
+def scalp_from_merriam(word: string):
     """ well, scalp definitions from meriam webster. Allowed by their robots.txt"""
     global BROWSER
 
@@ -167,7 +168,7 @@ def scalp_from_merriam(word):
     return definitions_raw[np.random.randint(0, len(definitions_raw))]
 
 # guarrenteed to break
-def remove_words(words):
+def remove_words(words: list):
     """ Remove words that have been proven to break this entire thing. 
         A cleaner solution to adding another dictionary to check and so on and so on.
     """
