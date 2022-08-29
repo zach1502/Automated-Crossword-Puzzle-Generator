@@ -1,23 +1,20 @@
 
-from time import sleep
 from bs4 import BeautifulSoup
-from regex import W
 from selenium import webdriver
 import numpy as np
 import requests
 
-browser = None
-words = []
+BROWSER = None
+WORDS = []
 cached_definitions = {}
 
-my_app_id = "005b8204"
-my_app_key = "acb927ae6038927a07d6be81722f53cd"
 DICTIONARY_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/"
 
 failed_words = []
 
 def get_words(num_words):
-    num_category = {    
+    """ Get Random words by scalping randomlists.com """
+    num_category = {
         "num_adj": [0, "https://www.randomlists.com/random-adjectives?dup=false&qty="],
         "num_verb": [0, "https://www.randomlists.com/random-verbs?dup=false&qty="],
         "num_adverb": [0, "https://www.randomlists.com/random-adverbs?dup=false&qty="],
@@ -46,13 +43,13 @@ def get_words(num_words):
 
     print(num_category)
 
-    return words
+    return WORDS
 
 def fetch_words(url):
-    global words
-    global browser
+    """Init BROWSER if not already active"""
+    global BROWSER
 
-    if browser == None:
+    if BROWSER is None:
         driver_path = "chromedriver.exe"
         brave_path = "C:/Program Files (x86)/BraveSoftware/Brave-Browser/Application/brave.exe"
 
@@ -62,22 +59,21 @@ def fetch_words(url):
         option.add_argument("--disable-web-security")
         option.add_argument("--disable-browser-side-navigation")
 
-        browser = webdriver.Chrome(executable_path=driver_path, options=option)
+        BROWSER = webdriver.Chrome(executable_path=driver_path, options=option)
 
-    browser.get(url)
-    soup = (BeautifulSoup(browser.page_source, "html.parser")).find("body")
+    BROWSER.get(url)
+    soup = (BeautifulSoup(BROWSER.page_source, "html.parser")).find("body")
 
     random_words = (soup.find("div", {"class": "Rand-stage"})).find_all("span", {"class":"rand_large"})
     for word in random_words:
         # check for non-alphanumeric characters
         if word.text.isalnum() and 2 < len(word.text) < 16:
-            words.append(word.text.upper())
+            WORDS.append(word.text.upper())
 
-    print(words)
+    print(WORDS)
 
 def fetch_definitions(v_words, h_words):
-    global browser
-
+    """ Take in words and find their definitions"""
     v_def = []
     h_def = []
 
@@ -85,8 +81,9 @@ def fetch_definitions(v_words, h_words):
     h_def = process_response(h_words)
 
     return v_def, h_def
-                    
+
 def process_response(words):
+    """ process the words and get their definitions """
     word_def = []
 
     for word in words:
@@ -110,7 +107,7 @@ def process_response(words):
         if(not need_to_scalp):
             chosen_def = process_results(word_info, word)
 
-        if(chosen_def == None):
+        if(chosen_def is None):
             try:
                 chosen_def = scalp_from_merriam(word)
             except Exception:
@@ -121,6 +118,7 @@ def process_response(words):
     return word_def
 
 def process_results(word_info, word):
+    """ parse data related to a word, output a definition """
     possible_definitions = []
     for definition_details in word_info[0]["meanings"][0]["definitions"]:
         definition = definition_details["definition"]
@@ -137,11 +135,12 @@ def process_results(word_info, word):
     return chosen_def
 
 def scalp_from_merriam(word):
-    global browser
+    """ well, scalp definitions from meriam webster. Allowed by their robots.txt"""
+    global BROWSER
 
     url = f"https://www.merriam-webster.com/dictionary/{word}"
 
-    if browser == None:
+    if BROWSER is None:
         driver_path = "C:/Users/Zachary/Desktop/Java Projects/automated crossword puzzle generator/chromedriver.exe"
         brave_path = "C:/Program Files (x86)/BraveSoftware/Brave-Browser/Application/brave.exe"
 
@@ -150,10 +149,10 @@ def scalp_from_merriam(word):
         option.add_argument("--headless")
         option.add_argument("--disable-web-security")
 
-        browser = webdriver.Chrome(executable_path=driver_path, options=option)
+        BROWSER = webdriver.Chrome(executable_path=driver_path, options=option)
     
-    browser.get(url)
-    soup = (BeautifulSoup(browser.page_source, "html.parser")).find("body")
+    BROWSER.get(url)
+    soup = (BeautifulSoup(BROWSER.page_source, "html.parser")).find("body")
 
     definitions = (soup.find("div", {"id": "left-content"})).find_all("span", {"class":"dtText"})
     definitions_raw = []
@@ -169,6 +168,9 @@ def scalp_from_merriam(word):
 
 # guarrenteed to break
 def remove_words(words):
+    """ Remove words that have been proven to break this entire thing. 
+        A cleaner solution to adding another dictionary to check and so on and so on.
+    """
     to_remove = [
         "CENTERCUT",
         "BUGSPRAY",
@@ -177,11 +179,11 @@ def remove_words(words):
         "SHADYSIDE",
         "UPLIFTINGLY",
         "JUDGEMENTALLY",
-        "SNOWSHOVEL", 
-        "JOSHINGLY", 
-        "WIFFLEBALL", 
-        "UNDERDEVELOP", 
-        "COAXINGLY", 
+        "SNOWSHOVEL",
+        "JOSHINGLY",
+        "WIFFLEBALL",
+        "UNDERDEVELOP",
+        "COAXINGLY",
         "GYNASTICS",
         "SHIPBOTTOM",
         "CARDSTOCK",
@@ -190,6 +192,6 @@ def remove_words(words):
 
     words = [word for word in words if word not in to_remove]
     return words
-    
+
 if __name__ == "__main__":
     process_response(["something"])
