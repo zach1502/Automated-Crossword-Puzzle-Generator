@@ -27,7 +27,6 @@ HEADER_SIZE = TEXT_SIZE << 1
 TEXT_FONT = ImageFont.truetype('times.ttf', size=TEXT_SIZE)
 HEADER_FONT = ImageFont.truetype('times.ttf', size=HEADER_SIZE)
 matplotlib.use('Agg') # don't use tkAgg (better memory usage)
-
 TARGET_DENSITY_LOW = 0.25
 TARGET_DENSITY_HIGH = 0.95
 
@@ -39,13 +38,12 @@ QUESTION_PATH = "questions/"
 # should make this multithreaded, each thread with its own browser
 PAGES_DESIRED = 3
 
-page_number = 1
-puzzle_list = []
+PAGE_NUMBER = 1
+PUZZLE_LIST = []
 
 def main():
     """This is the main function, encapsulates everything"""
 
-    global words
     global failed_words
     words = get_words(100000)
     # these words aren't in the Dictionary API and Merriam-Webster
@@ -74,19 +72,16 @@ def main():
         # combine_images
         enumerated_squares = assign_numbers(play_area.word_start_locations)
         build_page(v_def, h_def, play_area.word_start_locations, enumerated_squares)
-        print(failed_words)
 
     build_answers()
-
     build_book()
 
     print(failed_words)
 
 def build_book():
-    """ Takes all the images in puzzle_list and combines it into a PDF """
-    global puzzle_list
+    """ Takes all the images in PUZZLE_LIST and combines it into a PDF """
     
-    puzzle_list[0].save(PDF_PATH, "PDF", resolution=150.0, save_all=True, append_images=puzzle_list[1:])
+    PUZZLE_LIST[0].save(PDF_PATH, "PDF", resolution=150.0, save_all=True, append_images=PUZZLE_LIST[1:])
 
 def build_answers():
     """ Reads in all images in the answers folder and builds pages full of the answers in order """
@@ -98,14 +93,14 @@ def build_answers():
     build_answer_pages(ans_list)
 
 def build_answer_pages(ans_list):
-    """ Takes in a list of images and compiles them into an answer page. Finished page gets appended to puzzle_list"""
-    global page_number
+    """ Takes in a list of images and compiles them into an answer page. Finished page gets appended to PUZZLE_LIST"""
+    global PAGE_NUMBER
     
     position1 = (LEFT_ANS_INDENT, 50)
     position2 = (LEFT_ANS_INDENT, 850)
     first = True
     page = None
-    # draw.text(PAGE_NUMBER_LOCATION, str(page_number), BLACK, font=TEXT_FONT)
+    # draw.text(PAGE_NUMBER_LOCATION, str(PAGE_NUMBER), BLACK, font=TEXT_FONT)
     for i in range(len(ans_list)):
         solution = ans_list[i]
 
@@ -118,16 +113,16 @@ def build_answer_pages(ans_list):
         else:
             page.paste(solution, position2)
             first = True
-            draw.text(PAGE_NUMBER_LOCATION, str(page_number), BLACK, font=TEXT_FONT)
+            draw.text(PAGE_NUMBER_LOCATION, str(PAGE_NUMBER), BLACK, font=TEXT_FONT)
             draw.text((LEFT_INDENT, 1150), f"Puzzle {i + 1}", BLACK, font=TEXT_FONT)
-            page_number += 1
+            PAGE_NUMBER += 1
             page = page.resize((PAGE_SIZE[0] * 2, PAGE_SIZE[1] * 2), Image.NEAREST)
-            puzzle_list.append(page)
+            PUZZLE_LIST.append(page)
 
     if not first:
-        draw.text(PAGE_NUMBER_LOCATION, str(page_number), BLACK, font=TEXT_FONT)
+        draw.text(PAGE_NUMBER_LOCATION, str(PAGE_NUMBER), BLACK, font=TEXT_FONT)
         page = page.resize((PAGE_SIZE[0] * 2, PAGE_SIZE[1] * 2), Image.NEAREST)
-        puzzle_list.append(page)
+        PUZZLE_LIST.append(page)
 
 
 def split_words(words_details):
@@ -170,8 +165,8 @@ def assign_numbers(word_start_locations):
 ### V_def and h_def could contain the index
 def build_page(v_def, h_def, word_start_locations, enumerated_squares):
     """ Assembles the crossword puzzle page, with definitions and hints in order """
-    global page_number
-    global puzzle_list
+    global PAGE_NUMBER
+    global PUZZLE_LIST
 
     bg_image = Image.new('RGB', PAGE_SIZE, color='white')
     crossword_img = Image.open('crossword_question.png')
@@ -185,10 +180,10 @@ def build_page(v_def, h_def, word_start_locations, enumerated_squares):
     row = write_text(h_def, row, word_start_locations, enumerated_squares, draw, is_horizontal=True)
     row = write_text(v_def, row, word_start_locations, enumerated_squares, draw, is_horizontal=False)
 
-    draw.text(PAGE_NUMBER_LOCATION, str(page_number), BLACK, font=TEXT_FONT)
-    page_number += 1
+    draw.text(PAGE_NUMBER_LOCATION, str(PAGE_NUMBER), BLACK, font=TEXT_FONT)
+    PAGE_NUMBER += 1
     bg_image = bg_image.resize((PAGE_SIZE[0] * 2, PAGE_SIZE[1] * 2), Image.NEAREST)
-    puzzle_list.append(bg_image)
+    PUZZLE_LIST.append(bg_image)
     bg_image.save("page.png", resolution=150.0)
 
 def draw_underlined_text(draw, x, y, text: str, font, color):
@@ -320,7 +315,7 @@ def create_play_grid(play_area):
     table.scale(3, 3)
 
     plt.savefig("crossword_question.png", dpi=128, pad_inches=0.0, bbox_inches= Bbox([[-1, -1.5], [7.5, 6.25]]))
-    plt.savefig(f"questions/crossword_question_{page_number}.png", dpi=128, pad_inches=0.0, bbox_inches= Bbox([[-1, -1.5], [7.5, 6.25]]))
+    plt.savefig(f"questions/crossword_question_{PAGE_NUMBER}.png", dpi=128, pad_inches=0.0, bbox_inches= Bbox([[-1, -1.5], [7.5, 6.25]]))
     plt.close()
 
 def create_crossword_ans(play_area):
@@ -352,7 +347,7 @@ def create_crossword_ans(play_area):
                 colWidths=[0.75/play_area.size for x in range(play_area.size)]
                 ).scale(3, 3)
 
-    plt.savefig(f"answers/crossword_answers_{page_number}.png", dpi=96, pad_inches=0.0, bbox_inches= Bbox([[-1, -1.5], [7.5, 6.25]]))
+    plt.savefig(f"answers/crossword_answers_{PAGE_NUMBER}.png", dpi=96, pad_inches=0.0, bbox_inches= Bbox([[-1, -1.5], [7.5, 6.25]]))
     plt.close()
 
 if __name__ == "__main__":
