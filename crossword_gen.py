@@ -1,13 +1,13 @@
 from math import floor
 import random
 from copy import deepcopy
+from os import listdir
 from PIL import Image, ImageDraw, ImageFont
 from matplotlib.transforms import Bbox
 import matplotlib.pyplot as plt
 import matplotlib
-from os import listdir
-from utils.collect_words import *
-from utils.grid import *
+from utils.collect_words import get_words, fetch_definitions, remove_words, failed_words
+from utils.grid import grid
 
 # ISSUES:
 # 1. Improve readibility of code
@@ -43,13 +43,15 @@ page_number = 1
 puzzle_list = []
 
 def main():
+    """This is the main function, encapsulates everything"""
+
     global words
     global failed_words
     words = get_words(100000)
     # these words aren't in the Dictionary API and Merriam-Webster
     # i.e. will cause an exception. much better than having to manually build a list
-    words = remove_words(words) 
-    print(f"There are {words.__len__()} words being used")
+    words = remove_words(words)
+    print(f"There are {len(words)} words being used")
 
     for i in range(PAGES_DESIRED):
         play_area = create_crossword(words)
@@ -81,12 +83,13 @@ def main():
     print(failed_words)
 
 def build_book():
+    """ Takes all the images in puzzle_list and combines it into a PDF """
     global puzzle_list
     
     puzzle_list[0].save(PDF_PATH, "PDF", resolution=150.0, save_all=True, append_images=puzzle_list[1:])
 
 def build_answers():
-    # all files in the answers folder are assumed to be answers
+    """ Reads in all images in the answers folder and builds pages full of the answers in order """
     ans_list = [
         Image.open(ANS_PATH + f)
         for f in listdir(ANS_PATH)
@@ -95,6 +98,7 @@ def build_answers():
     build_answer_pages(ans_list)
 
 def build_answer_pages(ans_list):
+    """ Takes in a list of images and compiles them into an answer page. Finished page gets appended to puzzle_list"""
     global page_number
     
     position1 = (LEFT_ANS_INDENT, 50)
@@ -127,6 +131,7 @@ def build_answer_pages(ans_list):
 
 
 def split_words(words_details):
+    """ cache which words are in which direction for the sake of easier access """
     v_words = []
     h_words = []
 
@@ -139,6 +144,7 @@ def split_words(words_details):
     return v_words, h_words
 
 def assign_numbers(word_start_locations):
+    """ Adds numbers to the top left corner of each starting spot for a square"""
     squares = []
     word_start_locations_list = list(word_start_locations.items())
     num_common_squares = 0
@@ -163,6 +169,7 @@ def assign_numbers(word_start_locations):
 
 ### V_def and h_def could contain the index
 def build_page(v_def, h_def, word_start_locations, enumerated_squares):
+    """ Assembles the crossword puzzle page, with definitions and hints in order """
     global page_number
     global puzzle_list
 
@@ -185,8 +192,9 @@ def build_page(v_def, h_def, word_start_locations, enumerated_squares):
     bg_image.save("page.png", resolution=150.0)
 
 def draw_underlined_text(draw, x, y, text: str, font, color):
+    """ Draw underlined text at a specific (x, y)"""
     draw.text((x, y), text, fill=color, font=font)
-    draw.line((x, y + font.size , x + HEADER_SIZE * text.__len__() * 0.4, y + font.size), fill=color)
+    draw.line((x, y + font.size , x + HEADER_SIZE * len(text) * 0.4, y + font.size), fill=color)
 
 def split_line(line):
     # split the line into x lines, each about 100 char long, ending where there's a space
@@ -207,6 +215,7 @@ def split_line(line):
     return lines
 
 def write_text(definition_list, row, word_start_locations, enumerated_squares, draw, is_horizontal=True):
+    """ On the page, write down the numbered hints. This goes below the puzzle itself """
     row += 1
     title_text = "Horizontal Words: " if is_horizontal else "Vertical Words: "
     draw_underlined_text(draw, LEFT_INDENT + 15, CROSSWORD_IMG_HEIGHT + row * (TEXT_UPPERMARGIN + TEXT_SIZE), title_text, HEADER_FONT, BLACK)
@@ -223,7 +232,7 @@ def write_text(definition_list, row, word_start_locations, enumerated_squares, d
 
         starting_square = [word_info[1], word_info[2]]
 
-        for i in range(enumerated_squares.__len__()):
+        for i in range(len(enumerated_squares)):
             if(enumerated_squares[i][0] == starting_square[0] and enumerated_squares[i][1] == starting_square[1]):
                 word_index = enumerated_squares[i][2]
                 break
@@ -238,13 +247,14 @@ def write_text(definition_list, row, word_start_locations, enumerated_squares, d
     return row
 
 def create_crossword(words):
+    """ Automatically create a crossword puzzle """
     while(True):
         og_wordlist = deepcopy(words)
         play_area = grid(15)
 
         for i in range(3):
             for j in range(len(words)):
-                word = words[random.randint(0, words.__len__()-1)]
+                word = words[random.randint(0, len(words)-1)]
                 if(play_area.add_word(word)):
                     #print("Added word: " + word)
                     words.remove(word)
@@ -264,6 +274,7 @@ def create_crossword(words):
     return play_area
 
 def create_play_grid(play_area):
+    """ Draws out the crossword puzzle grid """
     # add number hints
     # [[1x, y], [2x, y], [3x, y], [4x, y]]
 
@@ -313,6 +324,7 @@ def create_play_grid(play_area):
     plt.close()
 
 def create_crossword_ans(play_area):
+    """ Create the crossword puzzle answers, results get saved into the answers folder """
     #create new plot
     #plt.margins(0,0)
     fig, ax = plt.subplots()
